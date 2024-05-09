@@ -1,0 +1,44 @@
+--select datahoraentrada, gabinete, piso, edificio from entrada_conta e, consulta c
+--where e.id = c.entrada_conta_id and e.datahoraentrada = '2015-06-09'
+
+
+select * from entrada_conta
+
+-- inserir entrada
+insert into entrada_conta (datahoraentrada, paciente_pessoa_cc, descricao, conta_valortotal, conta_valorpago, assistente_empregado_pessoa_cc)
+values ('09-05-2024', 111111111, 'doi me o coraçao', 50, 0, 100100100)
+
+-- inserir consulta
+insert into consulta (gabinete, piso, edificio, medico_empregado_pessoa_cc, entrada_conta_id)
+values (1,1, 'Edificio A', 300300300, 8)
+
+-- inserir pessoa
+INSERT INTO pessoa (nome, cc, datanascimento, sexo, telemovel, gmail, morada)
+VALUES ('Gabriela', 300300300, '11-02-2004', 'M', 929292929, 'gabi_ela@gmail.com', 'Porto')
+
+-- inserir empregado
+INSERT INTO empregado (horastrabalho, datacontratacao, finalcontratacao, pessoa_cc)
+values (60, '03-04-2022', '12-03-2030', 300300300)
+
+-- inserir asistente
+INSERT INTO assistente values (38, 'banho', 100100100)
+
+-- inserir enfermeiro
+INSERT INTO enfermeiro (numlicenf, especialidade, cargo, empregado_pessoa_cc)
+values (14,'Neurologia', 'enfermeiro', 200200200)
+
+-- inserir medico
+insert into medico (numlicmed, especialidade, empregado_pessoa_cc)
+values (100, 'cardiologia', 300300300)
+
+update empregado set id = 0 where pessoa_cc = 123123123
+
+select * from empregado
+select * from assistente
+select * from enfermeiro
+select * from pessoa
+select * from medico
+
+select * from entrada_conta
+select * from consulta
+
