@@ -1,17 +1,17 @@
 **MIGOS AQUI COLOCAMOS AS TAREFAS POR FAZER, PARA MALCAR COMO CONCLUIDO, POMOS UM X DENTRO DOS PARENTESIS**
 
 **FUNÇOES:**
-- [ ] adicionar paciente
+- [X] adicionar paciente
     - [ ] apenas paciente
     - [ ] não existe mais nenhum
-- [ ] adicionar medico
-- [ ] adicionar enfermeiro
-- [ ] adicionar assistente
+- [X] adicionar medico
+- [X] adicionar enfermeiro
+- [X] adicionar assistente
       
 - [ ] Login
     - [ ] enviar token e tipo de user
     
-- [ ] agendar consulta
+- [X] agendar consulta
     - [ ] verificacr se dotor existe
     - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
 - [ ] ver consultas
