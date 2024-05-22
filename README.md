@@ -2,27 +2,27 @@
 
 **FUNÇOES:**
 - [ ] adicionar paciente
-      - [ ] apenas paciente
-      - [ ] não existe mais nenhum
+    - [ ] apenas paciente
+    - [ ] não existe mais nenhum
 - [ ] adicionar medico
 - [ ] adicionar enfermeiro
 - [ ] adicionar assistente
       
 - [ ] Login
-      - [ ] enviar token e tipo de user
+    - [ ] enviar token e tipo de user
     
 - [ ] agendar consulta
-      - [ ] verificacr se dotor existe
-      - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
+    - [ ] verificacr se dotor existe
+    - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
 - [ ] ver consultas
-      - [ ] apenas assistentes
+    - [ ] apenas assistentes
       
 - [ ] agendar hospitalizaçao
 - [ ] agendar cirurgia
       
 - [ ] Ver prescriçoes
 - [ ] Adicionar prescriçao
-      - [ ] apenas medico
+    - [ ] apenas medico
 
 - [ ] Efetuar pagamento
 
