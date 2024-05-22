@@ -1,0 +1,70 @@
+**PROCEDURES**
+____________________________________________________________________________________
+ADICIONAR CONSULTA:
+CREATE OR REPLACE PROCEDURE addAppointment(
+    IN gab smallint, 
+    IN m_id bigint, 
+    IN con_time timestamp,
+    IN descript varchar,
+    IN cc bigint,
+    IN preco real,
+    OUT var integer)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    cursor_appointment CURSOR FOR
+        SELECT emp.id, c.gabinete, ent.datahoraentrada
+        FROM medico m
+        INNER JOIN consulta AS c ON m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
+        INNER JOIN empregado AS emp ON m.empregado_pessoa_cc = emp.pessoa_cc
+        INNER JOIN entrada_conta AS ent ON c.entrada_conta_id = ent.id
+        WHERE (c.gabinete = gab AND ent.datahoraentrada = con_time) 
+            OR (emp.id = m_id AND ent.datahoraentrada = con_time);
+    rec RECORD;
+    ultimo_id entrada_conta.id%TYPE;
+    medico_cc pessoa.cc%TYPE;
+BEGIN
+    -- Inicializar a variável de saída
+    var := 0;
+
+    -- Abrir o cursor
+    OPEN cursor_appointment;
+
+    -- Buscar a primeira linha
+    FETCH cursor_appointment INTO rec;
+
+    -- Verificar se não encontrou registros
+    IF NOT FOUND THEN
+        -- Buscar o CC do médico & Verificar se o médico existe
+		BEGIN
+			SELECT pessoa_cc INTO medico_cc
+				FROM empregado emp
+				INNER JOIN medico m on emp.pessoa_cc = m.empregado_pessoa_cc
+				WHERE id = m_id;
+				IF NOT FOUND THEN
+					RAISE EXCEPTION 'Médico com ID % não encontrado', m_id;
+				END IF;
+		END;
+
+        -- Inserir em entrada_conta
+        INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+        VALUES (con_time, descript, preco, 0, cc) 
+        RETURNING id INTO ultimo_id;
+
+        -- Inserir em consulta
+        INSERT INTO consulta (gabinete, medico_empregado_pessoa_cc, entrada_conta_id) 
+        VALUES (gab, medico_cc, ultimo_id);
+
+        -- Definir a variável de saída para 1
+        var := 1;
+    END IF;
+
+    -- Fechar o cursor
+    CLOSE cursor_appointment;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Se ocorrer um erro, relançar a exceção
+        RAISE;
+END;
+$$;
+____________________________________________________________________________________
