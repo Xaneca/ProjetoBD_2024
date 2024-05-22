@@ -12,7 +12,7 @@
     - [ ] enviar token e tipo de user
     
 - [X] agendar consulta
-    - [ ] verificacr se dotor existe
+    - [ ] verificar se medico existe
     - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
 - [ ] ver consultas
     - [ ] apenas assistentes
