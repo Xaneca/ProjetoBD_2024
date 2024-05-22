@@ -11,6 +11,13 @@ StatusCodes = {
     'internal_error': 500
 }
 
+price_appointment = 50
+price_surgery = 80
+gabinetes = [101, 102, 201, 202, 301, 302]
+salas = [101, 102, 201, 202, 301, 302]
+quartos = [101, 102, 201, 202, 301, 302]
+
+
 ##########################################################
 ## DATABASE ACCESS
 ##########################################################
@@ -25,6 +32,12 @@ def db_connection():
     )
 
     return db
+
+##############  AUTHENTICATION   ##############
+
+
+
+
 
 ##############     REGISTER      ##############
 #
@@ -48,7 +61,7 @@ def add_patient():
         #response = {'status': StatusCodes['api_error'], 'results': 'ndep value not in payload'}
         #return flask.jsonify(response)
     if 'gmail' not in payload:
-        payload['gmail'] = NULL
+        payload['gmail'] = None
 
     # parameterized queries, good for security and performance
         # adicionar dados à tabela 'pessoa'
@@ -107,6 +120,88 @@ def add_patient():
 #
 
 
+#################################################
+############## SCHEDULE APPOINTMENT #############
+#################################################
+
+
+@app.route('/dbproj/appointment', methods=['POST'])
+def add_appointment():
+    route_string = 'POST /dbproj/appointment'
+    logger.info(route_string)
+    payload = flask.request.get_json()
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+
+    # do not forget to validate every argument, e.g.,:
+    if 'doctor_id' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'doctor_id value not in payload'}
+        return flask.jsonify(response)
+    if 'time_stamp' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'time_stamp not in payload'}
+        return flask.jsonify(response)
+    if 'cc' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cc not in payload'}
+        return flask.jsonify(response)
+
+    # parameterized queries, good for security and performance
+    # statement = 'INSERT INTO dep (ndep, local, nome) VALUES (%s, %s, %s)'
+    # values = (payload['ndep'], payload['localidade'], payload['nome'])
+
+    doc_id = payload['doctor_id']
+    time_stamp = payload['time_stamp']
+    if 'descricao' in payload:
+        descricao = payload['descricao']
+    else:
+        descricao = ''
+
+    statement = "call addAppointment(%s::smallint, %s::bigint, %s::timestamp, %s::varchar, %s::bigint, %s::real, null)"
+    gab_found = False
+    excep = False
+
+    # ----- PROCEDURE NO SERVER -----
+    for gab in gabinetes:   
+        values = (gab, payload['doctor_id'], payload['time_stamp'], payload['descricao'], payload['cc'], price_appointment)
+        try:
+            cur.execute(statement, values)
+            rows = cur.fetchall()
+
+            #print("rows[0][0]: ", rows[0][0])
+            
+            if rows[0][0] == 1:
+                conn.commit()
+                gab_found = True
+                break
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            logger.error(f'{route_string} - error: {error}')
+            response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+            excep = True
+
+            # an error occurred, rollback
+            conn.rollback()
+            break
+    
+    if gab_found:
+        response = {'status': StatusCodes['success'], 'results': f'Consulta marcada com medico {doc_id} dia {time_stamp} - gabinete {gab}'}
+    elif excep:
+        #response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+        pass
+    else:
+        response = {'status': StatusCodes['internal_error'], 'results': 'não há gabinetes disponiveis ou o medico está ocupado nesta hora'}
+
+    conn.close()
+
+    return flask.jsonify(response)
+
+
+
+#################################################
+##############     MAIN      ####################
+#################################################
 
 if __name__ == '__main__':
     # set up logging
