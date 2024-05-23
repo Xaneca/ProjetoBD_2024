@@ -5,7 +5,9 @@
     - [ ] apenas paciente
     - [ ] não existe mais nenhum
 - [X] adicionar medico
+    - [ ] Ver se n ha outro com a mm licensa medica ou cc 
 - [X] adicionar enfermeiro
+    - [ ] Ver se n ha outro com a mm licensa enfermatica ou cc 
 - [X] adicionar assistente
       
 - [ ] Login
