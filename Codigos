@@ -81,7 +81,7 @@ CREATE OR REPLACE PROCEDURE addHosp(
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    cursor_appointment CURSOR FOR
+    cursor_hosp CURSOR FOR
         select cama from hospitalizacao h
 		inner join entrada_conta e on e.id = h.entrada_conta_id
 		where h.cama = nova_cama;
@@ -93,10 +93,10 @@ BEGIN
     var := 0;
 
     -- Abrir o cursor
-    OPEN cursor_appointment;
+    OPEN cursor_hosp;
 
     -- Buscar a primeira linha
-    FETCH cursor_appointment INTO rec;
+    FETCH cursor_hosp INTO rec;
 
     -- Verificar se não encontrou registros
     IF NOT FOUND THEN
@@ -135,7 +135,7 @@ BEGIN
     END IF;
 
     -- Fechar o cursor
-    CLOSE cursor_appointment;
+    CLOSE cursor_hosp;
 EXCEPTION
     WHEN OTHERS THEN
         -- Se ocorrer um erro, relançar a exceção
