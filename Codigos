@@ -6,7 +6,7 @@ CREATE OR REPLACE PROCEDURE addAppointment(
     IN m_id bigint, 
     IN con_time timestamp,
     IN descript varchar,
-    IN cc bigint,
+    IN pacient_cc bigint,
     IN preco real,
     OUT var integer)
 LANGUAGE plpgsql
@@ -45,10 +45,20 @@ BEGIN
 					RAISE EXCEPTION 'Médico com ID % não encontrado', m_id;
 				END IF;
 		END;
+		
+		-- Buscar o CC do paciente e verificar se ele existe
+        BEGIN
+            SELECT cc
+            FROM pessoa
+            WHERE cc = paciente_cc;
+            IF NOT FOUND THEN
+                RAISE EXCEPTION 'Paciente com CC % não encontrado', paciente_cc;
+            END IF;
+        END;
 
         -- Inserir em entrada_conta
         INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
-        VALUES (con_time, descript, preco, 0, cc) 
+        VALUES (con_time, descript, preco, 0, pacient_cc) 
         RETURNING id INTO ultimo_id;
 
         -- Inserir em consulta
