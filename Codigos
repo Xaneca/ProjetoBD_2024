@@ -68,3 +68,77 @@ EXCEPTION
 END;
 $$;
 ____________________________________________________________________________________
+ADICIONAR HOSPUTALIZACAO
+
+CREATE OR REPLACE PROCEDURE addHosp(
+    IN nova_cama smallint, 
+    IN enf_id bigint, 
+    IN hosp_time timestamp,
+    IN descript varchar(512),
+    IN cc bigint,
+    IN preco real,
+    OUT var integer)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    cursor_appointment CURSOR FOR
+        select cama from hospitalizacao h
+		inner join entrada_conta e on e.id = h.entrada_conta_id
+		where h.cama = nova_cama;
+    rec RECORD;
+    ultimo_id entrada_conta.id%TYPE;
+    enf_cc pessoa.cc%TYPE;
+BEGIN
+    -- Inicializar a variável de saída
+    var := 0;
+
+    -- Abrir o cursor
+    OPEN cursor_appointment;
+
+    -- Buscar a primeira linha
+    FETCH cursor_appointment INTO rec;
+
+    -- Verificar se não encontrou registros
+    IF NOT FOUND THEN
+        -- Buscar o CC do enfermeiro & Verificar se o enfermeiro existe
+		BEGIN
+			SELECT pessoa_cc INTO enf_cc
+				FROM empregado emp
+				INNER JOIN enfermeiro e on emp.pessoa_cc = e.empregado_pessoa_cc
+				WHERE id = enf_id;
+				IF NOT FOUND THEN
+					RAISE EXCEPTION 'Enfermeiro com ID % não encontrado', enf_id;
+				END IF;
+		END;
+		
+		-- Buscar o CC do paciente e verificar se ele existe
+        BEGIN
+            SELECT cc
+            FROM pessoa
+            WHERE cc = cc;
+            IF NOT FOUND THEN
+                RAISE EXCEPTION 'Paciente com CC % não encontrado', cc;
+            END IF;
+        END;
+
+        -- Inserir em entrada_conta
+        INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+        VALUES (hosp_time, descript, preco, 0, cc) -- cc do paciente
+        RETURNING id INTO ultimo_id;
+
+        -- Inserir em consulta
+        INSERT INTO hospitalizacao (cama, enfermeiro_empregado_pessoa_cc, entrada_conta_id)
+        VALUES (nova_cama, enf_cc, ultimo_id);
+
+        -- Definir a variável de saída para 1
+        var := 1;
+    END IF;
+
+    -- Fechar o cursor
+    CLOSE cursor_appointment;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Se ocorrer um erro, relançar a exceção
+        RAISE;
+END;
+$$;
