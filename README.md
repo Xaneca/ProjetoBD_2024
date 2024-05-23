@@ -37,5 +37,9 @@ ______________________________________________
 - [ ] 
 
 
+__________________________
 
+**NOTAS**
+    Cirurgia:
+        - nao verifiquei se o enfermeiro está disponivel naquela hora pq ele n tem q estar no momento da hospitalizacao, simplesmente é encarregue de acompanhá-la
 
