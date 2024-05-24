@@ -82,19 +82,22 @@ ADICIONAR HOSPUTALIZACAO
 
 CREATE OR REPLACE PROCEDURE addHosp(
     IN nova_cama smallint, 
-    IN enf_id bigint, 
+    IN enf_id bigint,
     IN hosp_time timestamp,
     IN descript varchar(512),
-    IN cc bigint,
+    IN paciente_cc bigint,
     IN preco real,
     OUT var integer)
 LANGUAGE plpgsql
 AS $$
 DECLARE
     cursor_hosp CURSOR FOR
-        select cama from hospitalizacao h
-		inner join entrada_conta e on e.id = h.entrada_conta_id
-		where h.cama = nova_cama;
+        SELECT cama
+		FROM hospitalizacao h
+		INNER JOIN entrada_conta e ON e.id = h.entrada_conta_id
+		WHERE h.cama = nova_cama
+		  AND e.datahoraentrada <= hosp_time
+		  AND (e.datahorasaida IS NULL OR e.datahorasaida >= hosp_time);	-- NULL significa q n se sabe quando vai sair
     rec RECORD;
     ultimo_id entrada_conta.id%TYPE;
     enf_cc pessoa.cc%TYPE;
@@ -125,9 +128,9 @@ BEGIN
         BEGIN
             SELECT cc
             FROM pessoa
-            WHERE cc = cc;
+            WHERE cc = paciente_cc;
             IF NOT FOUND THEN
-                RAISE EXCEPTION 'Paciente com CC % não encontrado', cc;
+                RAISE EXCEPTION 'Paciente com CC % não encontrado', paciente_cc;
             END IF;
         END;
 
@@ -141,7 +144,7 @@ BEGIN
         VALUES (nova_cama, enf_cc, ultimo_id);
 
         -- Definir a variável de saída para 1
-        var := 1;
+        var := ultimo_id;
     END IF;
 
     -- Fechar o cursor
