@@ -1,0 +1,195 @@
+select * from enfermeiro_cirurgia
+select * from enfermeiro
+select * from hospitalizacao
+select * from assistente
+
+select * from medico m
+inner join empregado e on m.empregado_pessoa_cc = e.pessoa_cc
+
+select * from entrada_conta
+order by datahoraentrada
+
+select * from entrada_conta e
+inner join consulta c on e.id =  c.entrada_conta_id
+
+
+select * from hospitalizacao h
+inner join enfermeiro_cirurgia e on h.entrada_conta_id = e.cirurgia_entrada_conta_id
+inner join cirurgia c on h.entrada_conta_id = c.entrada_conta_id
+
+-- inserir entrada
+insert into entrada_conta (datahoraentrada, paciente_pessoa_cc, descricao, conta_valortotal, conta_valorpago)
+values ('09-05-2024 9:00:00', 100200300, 'consulta de rotina', 50, 0)
+
+-- inserir hospitalizacao
+insert into hospitalizacao(cama, enfermeiro_empregado_pessoa_cc, entrada_conta_id)
+values (101, 200200200, 32)
+
+select cama from hospitalizacao h
+inner join entrada_conta e on e.id = h.entrada_conta_id
+where cama = 102
+
+-- inserir pessoa
+INSERT INTO pessoa (nome, cc, datanascimento, sexo, telemovel, gmail, morada)
+VALUES ('Ernesto Questo', 333222111, '24-05-1985', 'M', 945333333, 'estoesto@gmail.com', 'Veneza')
+-- inserir empregado
+INSERT INTO empregado (horastrabalho, datacontratacao, finalcontratacao, pessoa_cc)
+values (38, '11-04-2000', '12-03-2030', 333222111)
+-- inserir medico
+insert into medico (numlicmed, especialidade, empregado_pessoa_cc)
+values (120, 'ortopedia', 111222333)
+-- inserir enfermeiro
+INSERT INTO enfermeiro (numlicenf, especialidade, cargo, empregado_pessoa_cc)
+values (17,'Oftalmologia', 'chefe', 333222111)
+	
+
+--------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE addHosp(
+    IN nova_cama smallint, 
+    IN enf_id bigint, 
+    IN hosp_time timestamp,
+    IN descript varchar(512),
+    IN cc bigint,
+    IN preco real,
+    OUT var integer)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    cursor_appointment CURSOR FOR
+        select cama from hospitalizacao h
+		inner join entrada_conta e on e.id = h.entrada_conta_id
+		where h.cama = nova_cama;
+    rec RECORD;
+    ultimo_id entrada_conta.id%TYPE;
+    enf_cc pessoa.cc%TYPE;
+BEGIN
+    -- Inicializar a variável de saída
+    var := 0;
+
+    -- Abrir o cursor
+    OPEN cursor_appointment;
+
+    -- Buscar a primeira linha
+    FETCH cursor_appointment INTO rec;
+
+    -- Verificar se não encontrou registros
+    IF NOT FOUND THEN
+        -- Buscar o CC do enfermeiro & Verificar se o enfermeiro existe
+		BEGIN
+			SELECT pessoa_cc INTO enf_cc
+				FROM empregado emp
+				INNER JOIN enfermeiro e on emp.pessoa_cc = e.empregado_pessoa_cc
+				WHERE id = enf_id;
+				IF NOT FOUND THEN
+					RAISE EXCEPTION 'Enfermeiro com ID % não encontrado', enf_id;
+				END IF;
+		END;
+		
+		-- Buscar o CC do paciente e verificar se ele existe
+        BEGIN
+            SELECT cc
+            FROM pessoa
+            WHERE cc = cc;
+            IF NOT FOUND THEN
+                RAISE EXCEPTION 'Paciente com CC % não encontrado', cc;
+            END IF;
+        END;
+
+        -- Inserir em entrada_conta
+        INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+        VALUES (hosp_time, descript, preco, 0, cc) -- cc do paciente
+        RETURNING id INTO ultimo_id;
+
+        -- Inserir em consulta
+        INSERT INTO hospitalizacao (cama, enfermeiro_empregado_pessoa_cc, entrada_conta_id)
+        VALUES (nova_cama, enf_cc, ultimo_id);
+
+        -- Definir a variável de saída para 1
+        var := 1;
+    END IF;
+
+    -- Fechar o cursor
+    CLOSE cursor_appointment;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Se ocorrer um erro, relançar a exceção
+        RAISE;
+END;
+$$;
+
+CALL addHosp(
+    102::smallint, 
+    14::bigint, 
+    '2024-05-23 12:26'::timestamp, 
+    'caí numa ladeira'::varchar, 
+    100200301::bigint, 
+    50::real, 
+    NULL -- Para a variável de saída 'var'
+);
+
+-------------------------
+
+select * from cirurgia
+
+insert into cirurgia(sala, medico_empregado_pessoa_cc, entrada_conta_id)
+values(101, 111222333, 34)
+
+CREATE OR REPLACE PROCEDURE addSurg( -- assumindo q já existe hospitalizacao
+    IN nova_sala smallint, 
+    IN med_id bigint,
+    IN entrada_id integer,
+    OUT var integer)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    cursor_surg CURSOR FOR
+        select sala from hospitalizacao h
+		inner join entrada_conta e on e.id = h.entrada_conta_id
+		where h.cama = nova_cama;
+    rec RECORD;
+    med_cc pessoa.cc%TYPE;
+BEGIN
+    -- Inicializar a variável de saída
+    var := 0;
+
+    -- Abrir o cursor
+    OPEN cursor_surg;
+
+    -- Buscar a primeira linha
+    FETCH cursor_surg INTO rec;
+
+    -- Verificar se não encontrou registros
+    IF NOT FOUND THEN
+        -- Buscar o CC do medico & Verificar se o enfermeiro existe
+		BEGIN
+			SELECT pessoa_cc INTO enf_cc
+				FROM empregado emp
+				INNER JOIN enfermeiro e on emp.pessoa_cc = e.empregado_pessoa_cc
+				WHERE id = enf_id;
+				IF NOT FOUND THEN
+					RAISE EXCEPTION 'Enfermeiro com ID % não encontrado', enf_id;
+				END IF;
+		END;
+
+        -- Inserir em entrada_conta
+        INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+        VALUES (hosp_time, descript, preco, 0, cc) -- cc do paciente
+        RETURNING id INTO ultimo_id;
+
+        -- Inserir em consulta
+        INSERT INTO hospitalizacao (cama, enfermeiro_empregado_pessoa_cc, entrada_conta_id)
+        VALUES (nova_cama, enf_cc, ultimo_id);
+
+        -- Definir a variável de saída para 1
+        var := 1;
+    END IF;
+
+    -- Fechar o cursor
+    CLOSE cursor_surg;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Se ocorrer um erro, relançar a exceção
+        RAISE;
+END;
+$$;

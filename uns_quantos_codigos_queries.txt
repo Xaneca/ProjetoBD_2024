@@ -1,0 +1,198 @@
+create or replace procedure addAppointment(gabinete smallint, m_id bigint, con_time timestamp)
+language plpgsql
+as $$
+declare
+	c1 cursor for
+		select emp.id, c.gabinete, ent.datahoraentrada
+		from medico m
+			inner join consulta as c on m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
+			inner join empregado as emp on m.empregado_pessoa_cc = emp.pessoa_cc
+			inner join entrada_conta as ent on c.entrada_conta_id = ent.id
+		where (gabinete = gabinete and datahoraentrada = con_time) 
+				or (id = m_id and datahoraentrada = con_time)
+	ultimo_id entrada_conta.id%type;
+begin	
+	
+exception
+	when no_data_found then
+		start transaction;
+			insert into entrada_conta (datahoraentrada, descricao, conta_valortotal, paciente_pessoa_cc) 
+				values();
+			
+			ultimo_id = last_insert_id();
+			
+			insert into consulta (gabinete, medico_empregado_pessoa_cc, entrada_conta_id) 
+				values(gabinete, );
+		commit;
+end
+$$;
+
+
+select emp.id, c.gabinete, ent.datahoraentrada
+from medico m
+	inner join consulta as c on m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
+	inner join empregado as emp on m.empregado_pessoa_cc = emp.pessoa_cc
+	inner join entrada_conta as ent on c.entrada_conta_id = ent.id
+where (gabinete = 102 and datahoraentrada = '2024-05-09 11:30:00') 
+		or (emp.id = 1 and datahoraentrada = '2024-05-09 11:30:00')
+
+select * from medico
+select * from empregado
+
+-- inserir entrada
+insert into entrada_conta (datahoraentrada, paciente_pessoa_cc, descricao, conta_valortotal, conta_valorpago, assistente_empregado_pessoa_cc)
+values ('09-05-2024 12:30:00', 100200300, 'vejo mal', 50, 0, 100100100)
+
+-- inserir consulta
+insert into consulta (gabinete, medico_empregado_pessoa_cc, entrada_conta_id)
+values (102, 300300300, 3)
+
+select * from entrada_conta
+select * from consulta
+select * from paciente
+
+---
+DROP PROCEDURE addappointment(smallint,bigint,timestamp without time zone,character varying,bigint)
+
+create or replace procedure addAppointment(
+    in gab smallint, 
+    in m_id bigint, 
+    in con_time timestamp,
+	in descript varchar,
+	in cc bigint,
+	in preco real,
+	out var integer)
+language plpgsql
+as $$
+declare
+    cursor_appointment cursor for
+        select emp.id, c.gabinete, ent.datahoraentrada
+        from medico m
+        inner join consulta as c on m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
+        inner join empregado as emp on m.empregado_pessoa_cc = emp.pessoa_cc
+        inner join entrada_conta as ent on c.entrada_conta_id = ent.id
+        where (c.gabinete = gab and ent.datahoraentrada = con_time) 
+            or (emp.id = m_id and ent.datahoraentrada = con_time);
+    rec record;
+    ultimo_id entrada_conta.id%type;
+	medico_cc pessoa.cc%type
+	--var integer = 0;
+begin
+    -- Abrir o cursor
+    open cursor_appointment;
+
+    -- Buscar a primeira linha
+    fetch cursor_appointment into rec;
+
+    -- Verificar se não encontrou registros
+    if not found then
+		select pessoa_cc into medico_cc from empregado
+		where id = m_id;
+	
+		-- Inserir em entrada_conta
+		insert into entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+		values (con_time, descript, preco, 0, cc) 
+		returning id into ultimo_id;
+
+		-- Inserir em consulta
+		insert into consulta (gabinete, medico_empregado_pessoa_cc, entrada_conta_id) 
+		values (gab, medico_cc, ultimo_id);
+
+
+        -- Confirmar a transação
+        commit;
+		close cursor_appointment;
+		var:=1;
+		return;
+	else
+		var:=0;
+    end if;
+
+    -- Fechar o cursor
+    close cursor_appointment;
+end;
+$$;
+
+call addAppointment(101, 1, '2024-05-09 11:30:00', 'doi me tudo', 100200300, null)
+call addAppointment(201::smallint, 2::bigint, '2024-05-09 11:30:00'::timestamp, 'doi me tudo'::varchar, 100200300::bigint, null)
+
+select emp.id, c.gabinete, ent.datahoraentrada
+        from medico m
+        inner join consulta as c on m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
+        inner join empregado as emp on m.empregado_pessoa_cc = emp.pessoa_cc
+        inner join entrada_conta as ent on c.entrada_conta_id = ent.id
+        where (c.gabinete = 102 and ent.datahoraentrada = '2024-05-09 11:30:00') 
+            or (emp.id = 1 and ent.datahoraentrada = '2024-05-09 11:30:00');
+			
+select * from empregado;
+
+----- chat gpt
+
+CREATE OR REPLACE PROCEDURE addAppointment(
+    IN gab smallint, 
+    IN m_id bigint, 
+    IN con_time timestamp,
+    IN descript varchar,
+    IN cc bigint,
+    IN preco real,
+    OUT var integer)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    cursor_appointment CURSOR FOR
+        SELECT emp.id, c.gabinete, ent.datahoraentrada
+        FROM medico m
+        INNER JOIN consulta AS c ON m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
+        INNER JOIN empregado AS emp ON m.empregado_pessoa_cc = emp.pessoa_cc
+        INNER JOIN entrada_conta AS ent ON c.entrada_conta_id = ent.id
+        WHERE (c.gabinete = gab AND ent.datahoraentrada = con_time) 
+            OR (emp.id = m_id AND ent.datahoraentrada = con_time);
+    rec RECORD;
+    ultimo_id entrada_conta.id%TYPE;
+    medico_cc pessoa.cc%TYPE;
+BEGIN
+    -- Inicializar a variável de saída
+    var := 0;
+
+    -- Abrir o cursor
+    OPEN cursor_appointment;
+
+    -- Buscar a primeira linha
+    FETCH cursor_appointment INTO rec;
+
+    -- Verificar se não encontrou registros
+    IF NOT FOUND THEN
+        -- Buscar o CC do médico & Verificar se o médico existe
+		BEGIN
+			SELECT pessoa_cc INTO medico_cc
+				FROM empregado emp
+				INNER JOIN medico m on emp.pessoa_cc = m.empregado_pessoa_cc
+				WHERE id = m_id;
+				IF NOT FOUND THEN
+					RAISE EXCEPTION 'Médico com ID % não encontrado', m_id;
+				END IF;
+		END;
+
+        -- Inserir em entrada_conta
+        INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+        VALUES (con_time, descript, preco, 0, cc) 
+        RETURNING id INTO ultimo_id;
+
+        -- Inserir em consulta
+        INSERT INTO consulta (gabinete, medico_empregado_pessoa_cc, entrada_conta_id) 
+        VALUES (gab, medico_cc, ultimo_id);
+
+        -- Definir a variável de saída para 1
+        var := 1;
+    END IF;
+
+    -- Fechar o cursor
+    CLOSE cursor_appointment;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Se ocorrer um erro, relançar a exceção
+        RAISE;
+END;
+$$;
+
+select * from entrada_conta;
