@@ -295,3 +295,70 @@ EXCEPTION
 END;
 $$;
 
+~___________ login
+
+CREATE OR REPLACE PROCEDURE verificar_usuario(
+    IN username VARCHAR,
+    IN pass VARCHAR,
+    OUT out_role VARCHAR
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_pessoa_cc INTEGER;
+    v_stored_password VARCHAR;
+    v_empregado_cc INTEGER;
+BEGIN
+    -- Verifica se o email existe na tabela pessoa
+    SELECT cc, password INTO v_pessoa_cc, v_stored_password FROM pessoa WHERE email = username;
+
+    IF v_pessoa_cc IS NULL THEN
+        RAISE EXCEPTION 'Usuário com email % não encontrado', username;
+    END IF;
+
+    -- Verifica se a senha está nula e atualiza se necessário
+    IF v_stored_password IS NULL THEN
+        UPDATE pessoa SET password = pass WHERE cc = v_pessoa_cc;
+    ELSE
+        -- Verifica se a senha fornecida corresponde à armazenada
+        IF v_stored_password != p_password THEN
+            RAISE EXCEPTION 'Senha incorreta para o email %', username;
+        END IF;
+    END IF;
+
+    -- Verifica se é empregado
+    SELECT pessoa_cc INTO v_empregado_cc FROM empregado WHERE pessoa_id = v_pessoa_cc;
+
+    IF v_empregado_cc IS NULL THEN
+        RAISE EXCEPTION 'Empregado com email % não encontrado', username;
+    END IF;
+
+    -- Verifica se é médico
+    IF EXISTS (SELECT 1 FROM medico WHERE pessoa_empregado_cc = v_empregado_cc) THEN
+        out_role := 'medico';
+        RETURN;
+    END IF;
+
+    -- Verifica se é enfermeiro
+    IF EXISTS (SELECT 1 FROM enfermeiro WHERE pessoa_empregado_cc = v_empregado_cc) THEN
+        out_role := 'enfermeiro';
+        RETURN;
+    END IF;
+
+    -- Verifica se é assistente
+    IF EXISTS (SELECT 1 FROM assistente WHERE pessoa_empregado_cc = v_empregado_cc) THEN
+        out_role := 'assistente';
+        RETURN;
+    END IF;
+	
+	-- Verifica se é paciente
+    IF EXISTS (SELECT 1 FROM paciente WHERE pessoa__cc = v_pessoa_cc) THEN
+        out_role := 'paciente';
+        RETURN;
+    END IF;
+
+    -- Se não encontrar nenhum papel específico
+    RAISE EXCEPTION 'Papel não encontrado para o email %', username;
+END;
+$$;
+
