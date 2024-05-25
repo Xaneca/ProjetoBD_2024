@@ -20,7 +20,7 @@
           (tipo, consulta ja marcada das 17 as 18, n posso marcar as 17:30)
     - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
     - [ ] adicionar conta
-- [ ] ver consultas
+- [X] ver consultas
     - [ ] apenas assistentes
       
 - [X] agendar hospitalizaçao
