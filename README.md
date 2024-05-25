@@ -16,15 +16,15 @@
 - [X] agendar consulta
     - [X] verificar se medico existe
     - [ ] Verificar se paciente existe
-    - [ ] Verificar se entre o periodo do inicio da consulta e o final nao esta ocupado
+    - [X] Verificar se entre o periodo do inicio da consulta e o final nao esta ocupado
           (tipo, consulta ja marcada das 17 as 18, n posso marcar as 17:30)
     - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
     - [ ] adicionar conta
 - [ ] ver consultas
     - [ ] apenas assistentes
       
-- [ ] agendar hospitalizaçao
-- [ ] agendar cirurgia
+- [X] agendar hospitalizaçao
+- [X] agendar cirurgia
     - [ ] adicionar conta
       
 - [ ] Ver prescriçoes
