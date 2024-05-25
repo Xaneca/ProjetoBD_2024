@@ -1,0 +1,10 @@
+ER:
+	- adicionar password a pessoa
+	- gmail a unique
+	-
+
+FAzer:
+	- adicoinar conta quando se adiciona consulta
+	- adicioanr enfermeiros quando se adiciona consulta
+	- fazer as 3 listagens pedidas
+	- 
