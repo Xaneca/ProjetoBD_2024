@@ -642,3 +642,111 @@ begin
 			raise;
 end;
 $$;
+
+
+____ ADICIONAR ESPECIALIDADES E SUBESPECIALIDADES____
+
+-- ADICIONAR ESPECIALIDADE
+-- regista uma especializacao para um determinado empregado (tem de ser medico ou enfermeiro)
+-- retorna 1 em caso de sucesso, retorna 0 caso já exista
+create or replace procedure add_especialidade(in s_empregado_pessoa_cc integer,
+					      in s_nome varchar(512),
+					      out resultado integer)
+language plpgsql
+as $$
+begin
+	-- inicializar variavel de saida
+	resultado := 0;
+	
+	-- verificar se o empregado existe
+	if exists (
+			select 1 from pessoa
+			where cc = s_empregado_pessoa_cc)
+	then
+		
+		-- verificar se especialidade existe
+		begin
+			if exists (
+				select 1 from especialidade
+				where nome = s_nome)
+			then
+				raise exception 'Especialidade % ja esta inserida', s_nome;
+			else
+				begin
+					insert into especialidade(empregado_pessoa_id, nome)
+					values (s_empregado_pessoa_id, s_nome);
+					resultado = 1;
+				end;
+			end if;
+		end;
+	else
+		raise exception 'Pessoa com CC % inexistente', s_empregado_pessoa_cc;
+	end if;
+	
+	exception
+		when others then
+			-- Se ocorrer um erro, chamar a exceção
+			raise;
+end;
+$$;
+
+
+-- ADICIONAR SUBESPECIALIDADE
+-- regista uma subespecializacao para um determinado empregado (tem de ser medico ou enfermeiro) e especialidade
+-- retorna 1 em caso de sucesso, retorna 0 caso já exista
+create or replace procedure add_especialidade(in s_nome varchar(512),
+					      in s_nome_especialidade varchar(512),
+					      in s_especialidade_empregado_pessoa_cc integer,
+					      out resultado integer)
+language plpgsql
+as $$
+begin
+	-- inicializar variavel de saida
+	resultado := 0;
+	
+	-- verificar se o empregado existe
+	if exists (
+			select 1 from pessoa
+			where cc = s_empregado_pessoa_cc)
+	then
+		
+		-- verificar se especialidade existe
+		begin
+			if exists (
+				select 1 from especialidade
+				where nome = s_nome)
+			then
+				
+				-- verificar se subespecialidade existe
+				begin
+					if exists (
+						select 1 from subespecialidade
+						where nome = s_nome)
+					then
+						raise exception 'Subespecialidade % ja esta inserida', s_nome;
+					else
+					
+						-- se houver um empregado com a especialidade e sem esta subespecialidade, inserir na tabela
+						begin
+							insert into especialidade(empregado_pessoa_id, nome)
+							values (s_empregado_pessoa_id, s_nome);
+							resultado = 1;
+						end;
+					end if;
+				end;
+			else
+				raise exception 'Especialidade % nao existe', s_nome_especialidade;
+			end if;
+		end;
+	else
+		raise exception 'Empregado de CC % não existe', s_especialidade_empregado_pessoa_cc;
+	end if;
+			
+	exception
+		when others then
+			-- Se ocorrer um erro, chamar a exceção
+			raise;			
+
+end;
+$$;
+
