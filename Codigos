@@ -362,3 +362,283 @@ BEGIN
 END;
 $$;
 
+
+____________ADICIONAR PESSOAS________
+
+-- ADICIONAR PACIENTE
+-- regista um paciente para um determinado numero de cc
+-- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
+create or replace procedure add_paciente(in s_nome varchar(512),
+					 in s_cc integer,
+				         in s_datanascimento date,
+					 in s_sexo varchar(10),
+					 in s_telemovel integer,
+			                 in s_gmail varchar(20),
+					 in s_morada varchar(50),
+				         in s_tipo_sangue varchar(512),
+					 in s_altura float(8),
+					 in s_peso float(8),
+					 in s_password varchar(512),
+				         out resultado integer)
+language plpgsql
+as $$
+begin
+	-- inicializar variavel de retorno
+	resultado := 0;
+	
+	-- verificar se o email do paciente e unico
+	if exists (
+			select 1 from pessoa
+			where gmail = s_gmail)
+	then
+		raise exception 'Pessoa com gmail % ja existe', s_gmail;
+	else
+		begin
+			-- verificar se o paciente ja existe:
+			if exists (
+				select 1 from pessoa
+				where cc = s_cc)
+			then
+				raise exception 'Pessoa com CC % ja existe', s_cc;
+			else
+				begin
+					insert into pessoa(nome, cc, datanascimento, sexo, telemovel, gmail, morada, "password")
+					values(s_nome, s_cc, s_datanascimento, s_sexo, s_telemovel, s_gmail, s_morada, s_password)
+					returning cc into resultado;
+			
+					insert into paciente(tiposangue, altura, peso, pessoa_cc)
+					values(s_tiposangue, s_altura, s_peso, s_cc);
+					resultado :=1;
+				end;
+			end if;
+		end;
+	end if;
+	
+	exception
+		when others then
+			-- Se ocorrer um erro, chamar a exceção
+			raise;
+end;
+$$;
+
+
+
+-- ADICIONAR ASSISTENTE
+-- regista uma pessoa para um determinado numero de cc
+-- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
+create or replace procedure add_assistente(in s_nome varchar(512),
+				           in s_cc integer,
+				           in s_datanascimento date,
+				           in s_sexo varchar(10),
+				           in s_telemovel integer,
+				           in s_gmail varchar(20),
+				           in s_morada varchar(50),
+					   in s_datacontratacao date,
+					   in s_horastrabalho integer,
+					   in s_finalcontratacao date,
+					   in s_cedula integer,
+					   in s_funcao varchar(512),
+					   in s_password varchar(512),
+				           out resultado integer)
+language plpgsql
+as $$
+begin
+	-- inicializar variavel de retorno
+	resultado := 0;
+	
+	-- verificar se o gmail do assistente ja existe
+	if exists (
+			select 1 from pessoa
+			where gmail = s_gmail)
+	then
+		raise exception 'Pessoa com gmail % ja existe', s_gmail;
+	else
+		begin
+	
+			-- verificar se o CC do assistente ja existe:
+			if exists (
+				select 1 from pessoa
+				where cc = s_cc)
+			then
+				raise exception 'Pessoa com CC % ja existe', s_cc;
+			else
+				begin
+	
+					-- verificar se s_cedula é um valor novo
+					if exists (
+						select 1 from assistente
+	        			where cedula = s_cedula)
+					then
+						raise exception 'Numero de cedula % ja existe', s_cedula;
+					else
+						begin
+							insert into pessoa(nome, cc, datanascimento, sexo, telemovel, gmail, morada, "password")
+							values(s_nome, s_cc, s_datanascimento, s_sexo, s_telemovel, s_gmail, s_morada, s_password)
+							returning cc into resultado;
+	
+							insert into empregado(horastrabalho, datacontratacao, finalcontratacao)
+							values(s_horastrabalho, s_datacontratacao, s_finalcontratacao);
+	
+							insert into assistente(cedula, funcao)
+							values (s_cedula, s_funcao);
+						end;
+					end if;
+				end;
+			end if;
+		end;
+	end if;
+	
+	exception
+		when others then
+			-- Se ocorrer um erro, chamar a exceção
+			raise;
+end;
+$$;
+
+
+-- ADICIONAR MEDICO
+-- regista uma pessoa para um determinado numero de cc
+-- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
+create or replace procedure add_medico(in s_nome varchar(512),
+				       in s_cc integer,
+			               in s_datanascimento date,
+				       in s_sexo varchar(10),
+				       in s_telemovel integer,
+				       in s_gmail varchar(20),
+				       in s_morada varchar(50),
+				       in s_datacontratacao date,
+				       in s_horastrabalho integer,
+				       in s_finalcontratacao date,
+				       in s_cedula integer,
+				       in s_seccao varchar(512),
+				       in s_info_adicional text,
+				       in s_password varchar(512),
+				       out resultado integer)
+language plpgsql
+as $$
+begin
+	-- inicializar variavel de retorno
+	resultado := 0;
+	
+	-- verificar se o gmail do medico e unico
+	if exists (
+			select 1 from pessoa
+			where gmail = s_gmail)
+	then
+		raise exception 'Pessoa com gmail % ja existe', s_gmail;
+	else
+		begin
+		
+			-- verificar se o medico ja existe:
+			if exists (
+				select 1 from pessoa
+				where cc = s_cc)
+			then
+				raise exception 'Pessoa com CC % ja existe', s_cc;
+			else
+				begin
+	
+					-- verificar se s_cedula é um valor novo
+					if exists (
+						select 1 from medico
+	        			where cedula = s_cedula)
+					then
+						raise exception 'Numero de cedula % ja existe', s_cedula;
+					else
+						begin
+							insert into pessoa(nome, cc, datanascimento, sexo, telemovel, gmail, morada, "password")
+							values(s_nome, s_cc, s_datanascimento, s_sexo, s_telemovel, s_gmail, s_morada, s_password)
+							returning cc into resultado;
+	
+							insert into empregado(horastrabalho, datacontratacao, finalcontratacao)
+							values(s_horastrabalho, s_datacontratacao, s_finalcontratacao);
+	
+							insert into medico(cedula, seccao, info_adicional)
+							values (s_cedula, s_seccao, s_info_adicional);
+						end;
+					end if;
+				end;
+			end if;
+		end;
+	end if;
+	
+	exception
+		when others then
+			-- Se ocorrer um erro, chamar a exceção
+			raise;
+end;
+$$;
+
+
+-- ADICIONAR ENFERMEIRO
+-- regista uma pessoa para um determinado numero de cc
+-- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
+create or replace procedure add_enfermeiro(in s_nome varchar(512),
+				           in s_cc integer,
+				           in s_datanascimento date,
+				           in s_sexo varchar(10),
+				           in s_telemovel integer,
+				           in s_gmail varchar(20),
+					   in s_morada varchar(50),
+				           in s_datacontratacao date,
+				           in s_horastrabalho integer,
+				           in s_finalcontratacao date,
+				           in s_cedula integer,
+				           in s_seccao varchar(512),
+				           in s_cargo varchar(512),
+					   in s_password varchar(512),
+				           out resultado integer)
+language plpgsql
+as $$
+begin
+	-- inicializar variavel de retorno
+	resultado := 0;
+	
+	-- verificar se o email do enfermeiro e unio
+	if exists (
+			select 1 from pessoa
+			where gmail = s_gmail)
+	then
+		raise exception 'Pessoa com gmail % ja existente', s_gmail;
+	else
+		begin
+		
+			-- verificar se o paciente ja existe:
+			if exists (
+					select 1 from pessoa
+					where cc = s_cc)
+			then
+				raise exception 'Pessoa com CC % ja existe', s_cc;
+			else
+				begin
+				
+					-- verificar se s_cedula é um valor novo
+					if exists (
+						select 1 from enfermeiro
+	        			where cedula = s_cedula)
+					then
+						raise exception 'Numero de cedula % ja existe', s_cedula;
+					else
+						begin
+							insert into pessoa(nome, cc, datanascimento, sexo, telemovel, gmail, morada, "password")
+							values(s_nome, s_cc, s_datanascimento, s_sexo, s_telemovel, s_gmail, s_morada, s_password)
+							returning cc into resultado;
+	
+							insert into empregado(horastrabalho, datacontratacao, finalcontratacao)
+							values(s_horastrabalho, s_datacontratacao, s_finalcontratacao);
+	
+							insert into enfermeiro(cedula, seccao, cargo)
+							values (s_cedula, s_seccao, s_cargo);
+						end;
+					end if;
+				end;
+			end if;
+		end;
+	end if;
+	
+	exception
+		when others then
+			-- Se ocorrer um erro, chamar a exceção
+			raise;
+end;
+$$;
