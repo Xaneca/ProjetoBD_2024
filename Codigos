@@ -675,7 +675,7 @@ begin
 				begin
 					insert into especialidade(empregado_pessoa_id, nome)
 					values (s_empregado_pessoa_id, s_nome);
-					resultado = 1;
+					resultado := 1;
 				end;
 			end if;
 		end;
@@ -730,7 +730,7 @@ begin
 						begin
 							insert into especialidade(empregado_pessoa_id, nome)
 							values (s_empregado_pessoa_id, s_nome);
-							resultado = 1;
+							resultado := 1;
 						end;
 					end if;
 				end;
