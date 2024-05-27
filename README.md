@@ -3,12 +3,13 @@
 **FUNÇOES:**
 - [X] adicionar paciente
     - [ ] apenas paciente
-    - [ ] não existe mais nenhum
+    - [X] não existe mais nenhum
 - [X] adicionar medico
-    - [ ] Ver se n ha outro com a mm licensa medica ou cc 
+    - [X] Ver se n ha outro com a mm cedula ou cc 
 - [X] adicionar enfermeiro
-    - [ ] Ver se n ha outro com a mm licensa enfermatica ou cc 
+    - [X] Ver se n ha outro com a mm cedula ou cc
 - [X] adicionar assistente
+     - [X] Ver se n ha outro com a mm cedula ou cc
       
 - [ ] Login
     - [ ] enviar token e tipo de user
