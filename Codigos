@@ -2,9 +2,10 @@
 ____________________________________________________________________________________
 ADICIONAR CONSULTA:
 CREATE OR REPLACE PROCEDURE addAppointment(
-    IN gab smallint, 
-    IN m_id bigint, 
+    IN gab smallint,
+    IN m_id bigint,
     IN con_time timestamp,
+	IN con_time_end timestamp,
     IN descript varchar,
     IN pacient_cc bigint,
     IN preco real,
@@ -18,7 +19,7 @@ DECLARE
         INNER JOIN consulta AS c ON m.empregado_pessoa_cc = c.medico_empregado_pessoa_cc
         INNER JOIN empregado AS emp ON m.empregado_pessoa_cc = emp.pessoa_cc
         INNER JOIN entrada_conta AS ent ON c.entrada_conta_id = ent.id
-        WHERE (c.gabinete = gab AND ent.datahoraentrada = con_time) 
+        WHERE (c.gabinete = gab AND ent.datahoraentrada < con_time_end and ent.datahorasaida > con_time) 
             OR (emp.id = m_id AND ent.datahoraentrada = con_time);
     rec RECORD;
     ultimo_id entrada_conta.id%TYPE;
@@ -48,17 +49,17 @@ BEGIN
 		
 		-- Buscar o CC do paciente e verificar se ele existe
         BEGIN
-            SELECT cc
+            PERFORM cc
             FROM pessoa
-            WHERE cc = paciente_cc;
+            WHERE cc = pacient_cc;
             IF NOT FOUND THEN
-                RAISE EXCEPTION 'Paciente com CC % não encontrado', paciente_cc;
+                RAISE EXCEPTION 'Paciente com CC % não encontrado', pacient_cc;
             END IF;
         END;
 
         -- Inserir em entrada_conta
-        INSERT INTO entrada_conta (datahoraentrada, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
-        VALUES (con_time, descript, preco, 0, pacient_cc) 
+        INSERT INTO entrada_conta (datahoraentrada, datahorasaida, descricao, conta_valortotal, conta_valorpago, paciente_pessoa_cc) 
+        VALUES (con_time, con_time_end, descript, preco, 0, pacient_cc) 
         RETURNING id INTO ultimo_id;
 
         -- Inserir em consulta
