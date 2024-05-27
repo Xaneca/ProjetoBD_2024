@@ -29,7 +29,7 @@
     - [ ] adicionar conta
       
 - [ ] Ver prescriçoes
-- [ ] Adicionar prescriçao
+- [X] Adicionar prescriçao
     - [ ] apenas medico
 
 - [ ] Efetuar pagamento
