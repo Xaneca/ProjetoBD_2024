@@ -87,14 +87,14 @@ def authentication():
     return flask.jsonify(response)
 
 
-##############     REGISTER      ##############
-#
-# PACIENTE
-#
+#############################################
+############# REGISTER PATIENT ##############
+#############################################
+
 
 @app.route('/dbproj/register/patient', methods=['POST'])
 def add_patient():
-    route_string = 'POST /register/patient'
+    route_string = 'POST /dbproj/register/patient'
     logger.info(route_string)
     payload = flask.request.get_json()      # payload é um dicionario
 
@@ -102,75 +102,471 @@ def add_patient():
     cur = conn.cursor()
 
     logger.debug(f'{route_string} - payload: {payload}')
-
-    # do not forget to validate every argument, e.g.,:
-        # ⚠⚠ criar funçoes ⚠⚠
-    #if 'ndep' not in payload:
-        #response = {'status': StatusCodes['api_error'], 'results': 'ndep value not in payload'}
-        #return flask.jsonify(response)
-    if 'gmail' not in payload:
-        payload['gmail'] = None
-
-    # parameterized queries, good for security and performance
-        # adicionar dados à tabela 'pessoa'
-    statement1 = 'INSERT INTO pessoa (nome, cc, datanascimento, sexo, telemovel, gmail, morada) VALUES (%s, %s, %s, %s, %s, %s, %s)'
-    values1 = (payload['nome'], payload['cc'], payload['datanascimento'], payload['sexo'], payload['telemovel'], payload['gmail'], payload['morada'])
-        # adicionar dados à tabela 'paciente'
-    statement2 = 'INSERT INTO paciente (tiposangue, altura, peso, pessoa_cc) VALUES (%s, %s, %s, %s)'
-    values2 = (payload['tiposangue'], payload['altura'], payload['peso'], payload['cc'])
     
 
+    # do not forget to validate every argument, e.g.,:
+    if 'nome' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'person name (nome) not in payload'}
+        return flask.jsonify(response)
+    if 'cc' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cc not in payload'}
+        return flask.jsonify(response)
+    if 'datanascimento' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datanascimento not in payload'}
+        return flask.jsonify(response)
+    if 'sexo' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'sexo value not in payload'}
+        return flask.jsonify(response)
+    if 'telemovel' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'telemovel not in payload'}
+        return flask.jsonify(response)
+    if 'morada' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'morada not in payload'}
+        return flask.jsonify(response)
+    if 'gmail' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'gmail not in payload'}
+        return flask.jsonify(response)
+    if 'password' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'password not in payload'}
+        return flask.jsonify(response)
+    
+    if 'tiposangue' not in payload:
+        payload['tiposangue'] = None
+    if 'altura' not in payload:
+        payload['altura'] = None
+    if 'peso' not in payload:
+        payload['peso'] = None
+        
+    statement = "call add_paciente(%s::varchar, %s::integer, %s::date, %s::varchar, %s::integer, %s::varchar, %s::varchar, %s::varchar, %s::float, %s::float, %s::varchar, null)"
+    excep = False
+    success = False
+    response = ""
+    
+    # --- ADICIONAR PACIENTE --------------
+    values = (payload['nome'], payload['cc'], payload['datanascimento'], payload['sexo'], payload['telemovel'], payload['gmail'], payload['morada'], payload['tiposangue'], payload['altura'], payload['peso'], payload['password']);
     try:
-        cur.execute(statement1, values1)
+        cur.execute(statement, values)
+        rows = cur.fetchall()
+        
+        if rows[0][0] != 0: # significa que inseriu com sucesso
+            
+            # commit transaction
+            conn.comit()
+            id_paciente = rows[0][0]
+            success = True
 
-        # commit the transaction
-        conn.commit()
-        response = {'status': StatusCodes['success'], 'results': f'Inserted person {payload["nome"]}'}
-    except (Exception, psycopg2.DatabaseError) as error:
+    except(Exception, psycopg2.DatabaseError) as error:
         logger.error(f'{route_string} - error: {error}')
         response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+        excep = True
 
         # an error occurred, rollback
         conn.rollback()
-    try:
-        cur.execute(statement2, values2)
-
-        # commit the transaction
-        conn.commit()
-        response = {'status': StatusCodes['success'], 'results': f'Inserted patient {payload["nome"]}'}
-    except (Exception, psycopg2.DatabaseError) as error:
-        logger.error(f'{route_string} - error: {error}')
-        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
-
-        # an error occurred, rollback
-        conn.rollback()
-
+        
     finally:
+        if not excep and success:
+            response = {'status': StatusCodes['success'], 'results': f'Paciente com id {id_paciente} inserido '}
+        elif excep:
+            pass
+        else:
+            response = {'status': StatusCodes['internal_error'], 'results': 'ja ha uma pessoa com o mesmo id'}
         if conn is not None:
             conn.close()
 
     return flask.jsonify(response)
 
-#
-# MEDICO
-#
+
+
+#############################################
+############# REGISTER DOCTOR ###############
+#############################################
+
+
+@app.route('/dbproj/register/doctor', methods=['POST'])
+def add_doctor():
+    route_string = 'POST /dbproj/register/doctor'
+    logger.info(route_string)
+    payload = flask.request.get_json()      # payload é um dicionario
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+
+    # do not forget to validate every argument, e.g.,:
+    if 'nome' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'person name (nome) not in payload'}
+        return flask.jsonify(response)
+    if 'cc' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cc not in payload'}
+        return flask.jsonify(response)
+    if 'datanascimento' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datanascimento not in payload'}
+        return flask.jsonify(response)
+    if 'sexo' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'sexo value not in payload'}
+        return flask.jsonify(response)
+    if 'telemovel' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'telemovel not in payload'}
+        return flask.jsonify(response)
+    if 'morada' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'morada not in payload'}
+        return flask.jsonify(response)
+    if 'gmail' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'gmail not in payload'}
+        return flask.jsonify(response)
+    if 'password' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'password not in payload'}
+        return flask.jsonify(response)
+    if 'datacontratacao' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datacontratacao not in payload'}
+        return flask.jsonify(response)
+    if 'seccao' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'seccao not in payload'}
+        return flask.jsonify(response)
+    if 'cedula' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cedula not in payload'}
+        return flask.jsonify(response)
+    
+    if 'horastrabalho' not in payload:
+            payload['horastrabalho'] = None
+    if 'finalcontratacao' not in payload:
+            payload['finalcontratacao'] = None
+    if 'infoadicional' not in payload:
+            payload['infoadicional'] = None
+    if 'especialidade' not in payload:
+            payload['especialidade'] = None
+
+    statement = "call add_medico(%s::varchar, %s::integer, %s::date, %s::varchar, %s::integer, %s::varchar, %s::varchar, %s::date, %s::integer, %s::date, %s::integer, %s::varchar, %s::text, %s::varchar, null)"
+    excep = False
+    success = False
+    response = ""
+
+    # --- ADICIONAR MEDICO --------------
+    values = (payload['nome'], payload['cc'], payload['datanascimento'], payload['sexo'], payload['telemovel'], payload['gmail'], payload['morada'], payload['datacontratacao'], payload['horastrabalho'], payload['finalcontratacao'], payload['cedula'], payload['seccao'], payload['info_adicional'], payload['password']);
+    try:
+        cur.execute(statement, values)
+        rows = cur.fetchall()
+        
+        if rows[0][0] != 0: # significa que inseriu com sucesso
+            
+            # commit transaction
+            #conn.comit()
+            id_medico = rows[0][0]
+            success = True
+    
+
+    except(Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+        excep = True
+
+        # an error occurred, rollback
+        conn.rollback()
+        
+    # --- ADICIONAR ESPECIALIDADES --------------
+    if not excep and success and payload['especialidade'] != None:
+        statement = "call add_especialidade(%s::integer, %s::varchar)"
+        # ADICIONA ESPECIALIDE AO MEDICO
+        for it_especialidade in payload['especialidade']:
+            values = (payload['cc'], it_especialidade['nome'])
+            try:
+                cur.execute(statement, values)
+                #rows = cur.fetchall()
+
+            except (Exception, psycopg2.DatabaseError) as error:
+                logger.error(f'{route_string} - error: {error}')
+                response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+                excep = True
+
+                # an error occurred, rollback
+                conn.rollback()
+                break
+            # --- ADICIONAR SUBESPECIALIDADES --------------
+            if (len(it_especialidade['subespecialidade']) > 0):
+                statement1 = "call add_subespecialidade(%s::varchar, %s::varchar, %s::integer)"
+                # ADICIONA SUBESPECIALIDADE AO MEDICO
+                for it_subespecialidade in it_especialidade['subespecialidade']:
+                    values = (it_subespecialidade['nome'], it_especialidade['nome'], payload['cc'])
+                    try:
+                        cur.execute(statement1, values)
+                        #rows = cur.fetchall()
+
+                    except (Exception, psycopg2.DatabaseError) as error:
+                        logger.error(f'{route_string} - error: {error}')
+                        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+                        excep = True
+
+                        # an error occurred, rollback
+                        conn.rollback()
+                        break
+                else:
+                    # continuar se nao haver break no inner loop
+                    continue
+                # se houver break no inner loop sair do outer loop
+                break
+                
+    if not excep and success:
+        conn.commit()
+        response = {'status': StatusCodes['success'], 'results': f'Medico com id {id_medico} registado '}
+    elif excep:
+        pass
+    else:
+        response = {'status': StatusCodes['internal_error'], 'results': 'ha um medico ja inserido com a mesma cedula, ou o seccao esta fora dos valores pre-definidos'}
+    if conn is not None:
+        conn.close()
+
+    return flask.jsonify(response)
 
 
 
-#
-# ENFERMEIRO
-#
+#############################################
+############# REGISTER NURSE ################
+#############################################
 
 
+@app.route('/dbproj/register/doctor', methods=['POST'])
+def add_nurse():
+    route_string = 'POST /dbproj/register/nurse'
+    logger.info(route_string)
+    payload = flask.request.get_json()      # payload é um dicionario
 
-#
-# ASSISTENTE
-#
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+
+    # do not forget to validate every argument, e.g.,:
+    if 'nome' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'person name (nome) not in payload'}
+        return flask.jsonify(response)
+    if 'cc' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cc not in payload'}
+        return flask.jsonify(response)
+    if 'datanascimento' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datanascimento not in payload'}
+        return flask.jsonify(response)
+    if 'sexo' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'sexo value not in payload'}
+        return flask.jsonify(response)
+    if 'telemovel' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'telemovel not in payload'}
+        return flask.jsonify(response)
+    if 'morada' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'morada not in payload'}
+        return flask.jsonify(response)
+    if 'gmail' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'gmail not in payload'}
+        return flask.jsonify(response)
+    if 'password' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'password not in payload'}
+        return flask.jsonify(response)
+    if 'datacontratacao' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datacontratacao not in payload'}
+        return flask.jsonify(response)
+    if 'seccao' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'seccao not in payload'}
+        return flask.jsonify(response)
+    if 'cedula' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cedula not in payload'}
+        return flask.jsonify(response)
+    if 'cargo' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cargo not in payload'}
+        return flask.jsonify(response)
+    
+    if 'horastrabalho' not in payload:
+            payload['horastrabalho'] = None
+    if 'finalcontratacao' not in payload:
+            payload['finalcontratacao'] = None
+    if 'especialidade' not in payload:
+            payload['especialidade'] = None
+
+    statement = "call add_enfermeiro(%s::varchar, %s::integer, %s::date, %s::varchar, %s::integer, %s::varchar, %s::varchar, %s::date, %s::integer, %s::date, %s::integer, %s::varchar, %s::varchar, %s::varchar, null)"
+    excep = False
+    success = False
+    response = ""
+
+    # --- ADICIONAR ENFERMEIRO --------------
+    values = (payload['nome'], payload['cc'], payload['datanascimento'], payload['sexo'], payload['telemovel'], payload['gmail'], payload['morada'], payload['datacontratacao'], payload['horastrabalho'], payload['finalcontratacao'], payload['cedula'], payload['seccao'], payload['cargo'], payload['password']);
+    try:
+        cur.execute(statement, values)
+        rows = cur.fetchall()
+        
+        if rows[0][0] != 0: # significa que inseriu com sucesso
+            
+            # commit transaction
+            #conn.comit()
+            id_enfermeiro = rows[0][0]
+            success = True
+    
+
+    except(Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+        excep = True
+
+        # an error occurred, rollback
+        conn.rollback()
+        
+    # --- ADICIONAR ESPECIALIDADES --------------
+    if not excep and success and payload['especialidade'] != None:
+        statement = "call add_especialidade(%s::integer, %s::varchar)"
+        # ADICIONA ESPECIALIDE AO ENFERMEIRO
+        for it_especialidade in payload['especialidade']:
+            values = (payload['cc'], it_especialidade['nome'])
+            try:
+                cur.execute(statement, values)
+                #rows = cur.fetchall()
+
+            except (Exception, psycopg2.DatabaseError) as error:
+                logger.error(f'{route_string} - error: {error}')
+                response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+                excep = True
+
+                # an error occurred, rollback
+                conn.rollback()
+                break
+            # --- ADICIONAR SUBESPECIALIDADES --------------
+            if (len(it_especialidade['subespecialidade']) > 0):
+                statement1 = "call add_subespecialidade(%s::varchar, %s::varchar, %s::integer)"
+                # ADICIONA SUBESPECIALIDADE AO ENFERMEIRO
+                for it_subespecialidade in it_especialidade['subespecialidade']:
+                    values = (it_subespecialidade['nome'], it_especialidade['nome'], payload['cc'])
+                    try:
+                        cur.execute(statement1, values)
+                        #rows = cur.fetchall()
+
+                    except (Exception, psycopg2.DatabaseError) as error:
+                        logger.error(f'{route_string} - error: {error}')
+                        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+                        excep = True
+
+                        # an error occurred, rollback
+                        conn.rollback()
+                        break
+                else:
+                    # continuar se nao haver break no inner loop
+                    continue
+                # se houver break no inner loop sair do outer loop
+                break
+                
+    if not excep and success:
+        conn.commit()
+        response = {'status': StatusCodes['success'], 'results': f'Medico com id {id_enfermeiro} registado '}
+    elif excep:
+        pass
+    else:
+        response = {'status': StatusCodes['internal_error'], 'results': 'ha um medico ja inserido com a mesma cedula, ou o seccao esta fora dos valores pre-definidos'}
+    if conn is not None:
+        conn.close()
+
+    return flask.jsonify(response)
+
+
+#############################################
+############# REGISTER ASSISTENT ############
+#############################################
+
+
+@app.route('/dbproj/register/assistent', methods=['POST'])
+def add_assistent():
+    route_string = 'POST /dbproj/register/assistent'
+    logger.info(route_string)
+    payload = flask.request.get_json()      # payload é um dicionario
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+
+    # do not forget to validate every argument, e.g.,:
+    if 'nome' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'person name (nome) not in payload'}
+        return flask.jsonify(response)
+    if 'cc' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cc not in payload'}
+        return flask.jsonify(response)
+    if 'datanascimento' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datanascimento not in payload'}
+        return flask.jsonify(response)
+    if 'sexo' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'sexo value not in payload'}
+        return flask.jsonify(response)
+    if 'telemovel' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'telemovel not in payload'}
+        return flask.jsonify(response)
+    if 'morada' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'morada not in payload'}
+        return flask.jsonify(response)
+    if 'gmail' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'gmail not in payload'}
+        return flask.jsonify(response)
+    if 'password' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'password not in payload'}
+        return flask.jsonify(response)
+    if 'datacontratacao' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'datacontratacao not in payload'}
+        return flask.jsonify(response)
+    if 'cedula' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'cedula not in payload'}
+        return flask.jsonify(response)
+    
+    if 'horastrabalho' not in payload:
+            payload['horastrabalho'] = None
+    if 'finalcontratacao' not in payload:
+            payload['finalcontratacao'] = None
+    if 'funcao' not in payload:
+            payload['funcao'] = None
+    
+
+    statement = "call add_enfermeiro(%s::varchar, %s::integer, %s::date, %s::varchar, %s::integer, %s::varchar, %s::varchar, %s::date, %s::integer, %s::date, %s::integer, %s::varchar, %s::varchar, null)"
+    excep = False
+    success = False
+    response = ""
+
+    # --- ADICIONAR ASSISTENTE --------------
+    values = (payload['nome'], payload['cc'], payload['datanascimento'], payload['sexo'], payload['telemovel'], payload['gmail'], payload['morada'], payload['datacontratacao'], payload['horastrabalho'], payload['finalcontratacao'], payload['cedula'], payload['funcao'], payload['password']);
+    try:
+        cur.execute(statement, values)
+        rows = cur.fetchall()
+        
+        if rows[0][0] != 0: # significa que inseriu com sucesso
+            
+            # commit transaction
+            #conn.comit()
+            id_assistente = rows[0][0]
+            success = True
+    
+
+    except(Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+        excep = True
+
+        # an error occurred, rollback
+        conn.rollback()
+        
+                  
+    finally:
+        if not excep and success:
+            response = {'status': StatusCodes['success'], 'results': f'Paciente com id {id_assistente} inserido '}
+        elif excep:
+            pass
+        else:
+            response = {'status': StatusCodes['internal_error'], 'results': 'ja ha uma pessoa com o mesmo id ou a cedula ja existe'}
+        if conn is not None:
+            conn.close()      
+
+    return flask.jsonify(response)
 
 
 #################################################
 ############## SCHEDULE APPOINTMENT #############
 #################################################
+
 
 
 @app.route('/dbproj/appointment', methods=['POST'])
