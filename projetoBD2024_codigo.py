@@ -564,9 +564,106 @@ def add_assistent():
 
 
 #################################################
-############## SCHEDULE APPOINTMENT #############
+############## ADD PRESCRIPTION #################
 #################################################
 
+
+@app.route('/dbproj/prescription/', methods=['POST'])
+def add_prescription():
+    route_string = 'POST /dbproj/prescription/'
+    logger.info(route_string)
+    payload = flask.request.get_json()      # payload é um dicionario
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+
+    # do not forget to validate every argument, e.g.,:
+    if 'validade' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'validade not in payload'}
+        return flask.jsonify(response)
+    if 'entrada_conta_id' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'event_id (nome) not in payload'}
+        return flask.jsonify(response)
+    if 'descricaodosagem' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'descricaodosagem not in payload'}
+        return flask.jsonify(response)
+    if 'tipo' not in payload:
+        response = {'status': StatusCodes['api_error'], 'results': 'event_type (tipo) not in payload'}
+        return flask.jsonify(response)
+    
+    statement = "call adicionar_prescricao(%s::integer, %s::varchar, %s::date, %s::timestamp, null)"
+    med_founs = False
+    excep = False
+    success = False
+    response = ""
+    data_hora_atual = datetime.today().strftime('%Y-%m-%d %H:%M')
+    
+    # --- ADICIONAR RECEITA --------------
+    values = (payload['entrada_conta_id'], payload['tipo'], payload['validade'], data_hora_atual);
+    try:
+        cur.execute(statement, values)
+        rows = cur.fetchall()
+    
+        if rows[0][0] != 0: # significa que inseriu com sucesso
+        
+            # commit transaction
+            #conn.comit()
+            id_receita = rows[0][0]
+            success = True
+
+
+    except(Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+        excep = True
+
+        # an error occurred, rollback
+        conn.rollback()
+    
+    # --- ADICIONAR MEDICAMENTOS --------------
+    if not excep and success:
+      statement = "call add_descricaodosagem(%s::integer, %s::integer, %s::integer, %s::varchar, %s::varchar, %s::integer, null)"
+      # ADICIONA MEDICAMENTO A RECEITA
+      for parcela_receita in payload['descricaodosagem']:
+          values = (str(id_receita), payload['entrada_conta_id'], parcela_receita['medicamento_id'], parcela_receita['frequencia'], parcela_receita['periodo'], parcela_receita['quantidade'])
+          try:
+              cur.execute(statement, values)
+              rows = cur.fetchall()
+              if rows[0][0] != 0: # significa que inseriu com sucesso
+                  med_founs = True
+
+          except (Exception, psycopg2.DatabaseError) as error:
+              logger.error(f'{route_string} - error: {error}')
+              response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+              excep = True
+
+              # an error occurred, rollback
+              conn.rollback()
+              break
+      if not excep and med_founs and success:
+          conn.commit()
+          response = {'status': StatusCodes['success'], 'results': f'prescription_id: {id_receita}'}
+      elif not excep and med_founs == False and success:
+          response = {'status': StatusCodes['internal_error'], 'results': 'medicamento nao existe'}
+      elif not excep and success == False:
+          response = {'status': StatusCodes['internal_error'], 'results': 'Consulta/hospitalizacao nao existe ou nao esta a ocorrer'}
+      else:
+          pass
+      
+      if conn is not None:
+          conn.close() 
+          
+      return flask.jsonify(response)
+
+
+
+              
+#################################################
+############## SCHEDULE APPOINTMENT #############
+#################################################
 
 
 @app.route('/dbproj/appointment', methods=['POST'])
@@ -605,6 +702,7 @@ def add_appointment():
     statement = "call addAppointment(%s::smallint, %s::bigint, %s::timestamp, %s::varchar, %s::bigint, %s::real, null)"
     gab_found = False
     excep = False
+    
     response = ""
 
     # ----- PROCEDURE NO SERVER -----
