@@ -694,7 +694,7 @@ $$;
 -- ADICIONAR SUBESPECIALIDADE
 -- regista uma subespecializacao para um determinado empregado (tem de ser medico ou enfermeiro) e especialidade
 -- retorna 1 em caso de sucesso, retorna 0 caso já exista
-create or replace procedure add_especialidade(in s_nome varchar(512),
+create or replace procedure add_subespecialidade(in s_nome varchar(512),
 					      in s_nome_especialidade varchar(512),
 					      in s_especialidade_empregado_pessoa_cc integer,
 					      out resultado integer)
