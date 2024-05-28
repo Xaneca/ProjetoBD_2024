@@ -36,6 +36,7 @@
     - [ ] apenas medico
 
 - [ ] Efetuar pagamento
+    - [ ] Quando se insere consulta ou cirurgia ver se o paciente já tem conta aberta, e atualiza-se -> trigger
 
 - [ ] Listar top 3 pacientes com mais dinheiro gasto - apenas uma query
 - [ ] Sumário diário - apenas uma query
