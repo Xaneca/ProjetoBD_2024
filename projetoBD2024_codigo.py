@@ -1001,6 +1001,41 @@ def add_Surgery(id_hosp):
 
     return flask.jsonify(response)
 
+#############################################
+############## DAILY SUMMARY ###############
+#############################################
+
+
+@app.route('/dbproj/prescriptions/<str:year-month-day>', methods=['GET'])
+def daily_summary(year_month_day):
+    route_string = 'GET /dbproj/prescriptions/<year-month-day>'
+    logger.info(route_string)
+    payload = flask.request.get_json()
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+    try:
+        #cur.execute('SELECT nemp, nome, funcao, encar, data_entrada, sal, premios, ndep FROM emp where nemp = %s', (nemp,))
+        cur.execute('select datahorasaida, count(cirurHos.hospitalizacao_entrada_conta),  sum(conta_valorpago), count(prescricao) from entrada_conta as ec inner join prescricao as pres on pres.entrada_conta_id = ec.id inner join hospitalizacao as hos on ec.id = hos.entrada_conta_id inner join cirurgia_hospitalizacao as cirurHos on cirurHos.hospitalizacao_entrada_conta = hos.entrada_conta_id inner join pagamento as pag on ec.id = pag.entrada_conta_id where date(%s) = datahorasaida and (precricao.tipo = "hospitalizacao" or prescricao.tipo = "Hospitalizacao") group by datahorasaida;', (year_month_day,))
+        rows = cur.fetchall()
+        
+        row = rows[0]
+        
+        conteudo = {'amount_spent': row[1], 'surgeries': row[0], 'precription': row[2]}
+        
+        response = {'status': StatusCodes['success'], 'results': conteudo}
+    except (Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+    return flask.jsonify(response)
 
 
 #################################################
