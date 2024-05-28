@@ -1006,9 +1006,9 @@ def add_Surgery(id_hosp):
 #############################################
 
 
-@app.route('/dbproj/prescriptions/<str:year-month-day>', methods=['GET'])
+@app.route('/dbproj/daily/<str:year-month-day>', methods=['GET'])
 def daily_summary(year_month_day):
-    route_string = 'GET /dbproj/prescriptions/<year-month-day>'
+    route_string = 'GET /dbproj/daily/<year-month-day>'
     logger.info(route_string)
     payload = flask.request.get_json()
 
@@ -1025,6 +1025,46 @@ def daily_summary(year_month_day):
         row = rows[0]
         
         conteudo = {'amount_spent': row[1], 'surgeries': row[0], 'precription': row[2]}
+        
+        response = {'status': StatusCodes['success'], 'results': conteudo}
+    except (Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+    return flask.jsonify(response)
+
+
+#################################################
+##############     MONTHLY SUMMARY      #########
+#################################################
+
+
+@app.route('/dbproj/prescriptions/report', methods=['GET'])
+def report():
+    route_string = 'GET /dbproj/prescriptions/report'
+    logger.info(route_string)
+    payload = flask.request.get_json()
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+    try:
+        #cur.execute('SELECT nemp, nome, funcao, encar, data_entrada, sal, premios, ndep FROM emp where nemp = %s', (nemp,))
+        cur.execute('select mes, person_name, max(resultado_por_mes) from ( select extract(month from dataentrada) as mes, nome_pessoa as person_name, sum(numero_total_per_month) as resultado_por_mes from( select count(cirurgia.medico_empregado_cc) as numero_total_per_month, datahoraentrada as dataentrada, nome as nome_pessoa from cirurgia as cir left join entrada_conta as ec on ec.id = cir.entrada_conta_id left join pessoa as pes on cir.medico_pessoa_empregado_id = pes.cc group by datahoraentrada, nome_pessoa) group by mes, person_name) group by mes, person_name order by max(resultado_por_mes) desc;')
+        rows = cur.fetchall()
+        
+        conteudo = []
+        for row in rows:
+            mes = row[0]
+            person_name = row[1]
+            maximo_naquele_mes = row[2]
+            conteudo.append({'month': mes, 'nome': person_name, 'surgeries': maximo_naquele_mes})
         
         response = {'status': StatusCodes['success'], 'results': conteudo}
     except (Exception, psycopg2.DatabaseError) as error:
