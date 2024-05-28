@@ -11,8 +11,8 @@
 - [X] adicionar assistente
      - [X] Ver se n ha outro com a mm cedula ou cc
       
-- [ ] Login
-    - [ ] enviar token e tipo de user
+- [X] Login
+    - [X] enviar token e tipo de user
     
 - [X] agendar consulta
     - [X] verificar se medico existe
@@ -27,6 +27,7 @@
 - [X] agendar hospitalizaçao
 - [X] agendar cirurgia
     - [ ] adicionar conta
+    - [ ] Adicionar enfermeiro
       
 - [ ] Ver prescriçoes
 - [X] Adicionar prescriçao
@@ -42,7 +43,8 @@ ______________________________________________
 
 **SUGESTÕES**
 - [ ] haver apenas uma funçao para adicionar uma pessoa, e dentro dela é que se especificam os detalhes
-- [ ] 
+- [ ] Trigger para aumentar o nº de horas de trabalho
+- [ ] Tempo de consulta e cirurgia parametrizavel - n é dificil mas tmb n é prioritario
 
 
 __________________________
