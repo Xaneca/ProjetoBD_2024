@@ -26,3 +26,18 @@ call add_enfermeiro('Diana Raquel', 101202303, '1980-05-04', 'F', 937333333,
 call add_assistente('Sofia João', 101202101, '1983-03-03', 'F', 937833333, 
 				   'sjota@gmail.com', 'Lituania', '2021-01-02', 19, '2030-12-03',
 				   3333, 'Banhos', '$2b$12$z8G.uRxUUGBhlgdjCnd1COHrvbAuwIbFpxNgLbtY7LMXmKJyF69ty', null);
+
+----- MEDICAMENTOS E EFEITOS COLATERAIS
+
+insert into medicamento (id, doseunitaria, generico, preco, nome) values
+(14, 20, true, 6.00, 'Ibuprofeno Generis MG'),
+(15, 40, true, 5.00, 'Paracetamol ben-u-ron'),
+(16, 0.125, true, 12, 'Locabiosol')
+
+insert into efeitocolateral (descricao, probabilidade, severidade, medicamento_id) values
+('dor de cabeça', 0.1, 'Moderado', 14),
+('vomito', 0.01, 'Leve', 14),
+('Comichao', 0.05, 'Severo', 15),
+('tonturas', 0.14, 'Leve', 15),
+('Queda de cabelo', 0.01, 'Leve', 16)
+

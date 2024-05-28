@@ -18,6 +18,14 @@ as $$
 begin
 	-- inicializar variavel de retorno
 	resultado := 0;
+
+	-- verificar se o paciente ja existe:
+	if exists (
+		select 1 from pessoa
+		where cc = s_cc)
+	then
+		raise exception 'Pessoa com CC % ja existe', s_cc;
+	end if;
 	
 	-- verificar se o email do paciente e unico
 	if exists (
@@ -25,28 +33,16 @@ begin
 			where gmail = s_gmail)
 	then
 		raise exception 'Pessoa com gmail % ja existe', s_gmail;
-	else
-		begin
-			-- verificar se o paciente ja existe:
-			if exists (
-				select 1 from pessoa
-				where cc = s_cc)
-			then
-				raise exception 'Pessoa com CC % ja existe', s_cc;
-			else
-				begin
-					insert into pessoa(nome, cc, datanascimento, sexo, telemovel, gmail, morada, "password")
-					values(s_nome, s_cc, s_datanascimento, s_sexo, s_telemovel, s_gmail, s_morada, s_password)
-					returning cc into resultado;
-			
-					insert into paciente(tiposangue, altura, peso, pessoa_cc)
-					values(s_tipo_sangue, s_altura, s_peso, s_cc);
-					resultado :=1;
-				end;
-			end if;
-		end;
 	end if;
-	
+			
+	insert into pessoa(nome, cc, datanascimento, sexo, telemovel, gmail, morada, "password")
+	values(s_nome, s_cc, s_datanascimento, s_sexo, s_telemovel, s_gmail, s_morada, s_password)
+	returning cc into resultado;
+
+	insert into paciente(tiposangue, altura, peso, pessoa_cc)
+	values(s_tipo_sangue, s_altura, s_peso, s_cc);
+	resultado :=1;
+
 	exception
 		when others then
 			-- Se ocorrer um erro, chamar a exceção
@@ -363,9 +359,9 @@ declare
 		select entrada_conta_id
 			from prescricao pres
 			inner join entrada_conta as e on e.id = pres.entrada_conta_id
-			where pres.entrada_conta_id = s_entrada_conta_id
-				and pres.datahoraentrada < cur_time
-				and (pres.datahorasaida is null or pres.datahorasaida > cur_time);
+			where e.id = s_entrada_conta_id
+				and e.datahoraentrada < cur_time
+				and (e.datahorasaida is null or e.datahorasaida > cur_time);
 	rec RECORD;
 	ultimo_id_entrada entrada_conta.id%type;
 begin
@@ -397,15 +393,15 @@ begin
 							from entrada_conta e
 								full join consulta as co on e.id = co.entrada_conta_id
 								full join hospitalizacao as ho on e.id = ho.entrada_conta_id
-								where pres.entrada_conta_id = s_entrada_conta_id
-									and pres.datahoraentrada < cur_time
-									and (pres.datahorasaida is null or pres.datahorasaida > cur_time)
+								where e.id = s_entrada_conta_id
+									and e.datahoraentrada < cur_time
+									and (e.datahorasaida is null or e.datahorasaida > cur_time)
 					)
 					then
 						begin
 							-- inserir em prescricao
-							insert into prescricao(validade, entrada_conta_id)
-							values(s_validade, s_entrada_conta_id)
+							insert into prescricao(validade, tipo, entrada_conta_id)
+							values(s_validade, s_tipo, s_entrada_conta_id)
 							returning numpresc into resultado;
 						end;
 					else
@@ -458,7 +454,7 @@ begin
 			then
 				begin
 					-- inserir descricaodosagem
-					insert into descricaodosagem(prescricao_entrada_conta, medicamento_id, quantidade, periodo, frequencia)
+					insert into descricaodosagem(prescricao_entrada_conta_id, medicamento_id, quantidade, periodo, frequencia)
 					values (s_entrada_conta_id, s_medicamento_id, s_quantidade, s_periodo, s_frequencia)
 					returning s_id_receita into resultado;
 				end;
