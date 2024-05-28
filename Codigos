@@ -158,7 +158,7 @@ EXCEPTION
 END;
 $$;
 
-___ CIRURGIA _____________________-
+___ CIRURGIA _________________________________________________________
 
 CREATE OR REPLACE PROCEDURE addSurg(
     IN nova_sala smallint, 
@@ -252,7 +252,7 @@ EXCEPTION
 END;
 $$;
 
-___________________ ADD ENFERMEIRO À CIRURGIA
+___________________ ADD ENFERMEIRO À CIRURGIA __________________________________________
 
 CREATE OR REPLACE PROCEDURE addEnfToSurg(
 	IN enf_id bigint,
@@ -296,67 +296,62 @@ EXCEPTION
 END;
 $$;
 
-~___________ login
+___________ login __________________________________________________________________
 
 CREATE OR REPLACE PROCEDURE verificar_usuario(
     IN username VARCHAR,
-    IN pass VARCHAR,
+    OUT pass VARCHAR,
     OUT out_role VARCHAR
 )
 LANGUAGE plpgsql
 AS $$
 DECLARE
     v_pessoa_cc INTEGER;
-    v_stored_password VARCHAR;
+    --v_stored_password VARCHAR;
     v_empregado_cc INTEGER;
 BEGIN
     -- Verifica se o email existe na tabela pessoa
-    SELECT cc, password INTO v_pessoa_cc, v_stored_password FROM pessoa WHERE email = username;
+    SELECT cc, password INTO v_pessoa_cc, pass FROM pessoa WHERE gmail = username;
 
     IF v_pessoa_cc IS NULL THEN
         RAISE EXCEPTION 'Usuário com email % não encontrado', username;
     END IF;
 
-    -- Verifica se a senha está nula e atualiza se necessário
-    IF v_stored_password IS NULL THEN
-        UPDATE pessoa SET password = pass WHERE cc = v_pessoa_cc;
-    ELSE
-        -- Verifica se a senha fornecida corresponde à armazenada
-        IF v_stored_password != p_password THEN
-            RAISE EXCEPTION 'Senha incorreta para o email %', username;
-        END IF;
+	-- Verifica se é paciente
+    IF EXISTS (SELECT 1 FROM paciente WHERE pessoa_cc = v_pessoa_cc) THEN
+        out_role := 'paciente';
+        --RETURN;
     END IF;
 
     -- Verifica se é empregado
-    SELECT pessoa_cc INTO v_empregado_cc FROM empregado WHERE pessoa_id = v_pessoa_cc;
+    SELECT pessoa_cc INTO v_empregado_cc FROM empregado WHERE pessoa_cc = v_pessoa_cc;
 
-    IF v_empregado_cc IS NULL THEN
-        RAISE EXCEPTION 'Empregado com email % não encontrado', username;
-    END IF;
+	-- em principio esta verificaçao é inutil
+    --IF v_empregado_cc IS NULL THEN
+        --RAISE EXCEPTION 'Empregado com email % não encontrado', username;
+	--END IF;
 
     -- Verifica se é médico
-    IF EXISTS (SELECT 1 FROM medico WHERE pessoa_empregado_cc = v_empregado_cc) THEN
+    IF EXISTS (SELECT 1 FROM medico WHERE empregado_pessoa_cc = v_empregado_cc) THEN
         out_role := 'medico';
         RETURN;
     END IF;
 
     -- Verifica se é enfermeiro
-    IF EXISTS (SELECT 1 FROM enfermeiro WHERE pessoa_empregado_cc = v_empregado_cc) THEN
+    IF EXISTS (SELECT 1 FROM enfermeiro WHERE empregado_pessoa_cc = v_empregado_cc) THEN
         out_role := 'enfermeiro';
         RETURN;
     END IF;
 
     -- Verifica se é assistente
-    IF EXISTS (SELECT 1 FROM assistente WHERE pessoa_empregado_cc = v_empregado_cc) THEN
+    IF EXISTS (SELECT 1 FROM assistente WHERE empregado_pessoa_cc = v_empregado_cc) THEN
         out_role := 'assistente';
         RETURN;
     END IF;
-	
-	-- Verifica se é paciente
-    IF EXISTS (SELECT 1 FROM paciente WHERE pessoa__cc = v_pessoa_cc) THEN
-        out_role := 'paciente';
-        RETURN;
-    END IF;
+
+	IF out_role = 'paciente' THEN
+		RETURN;
+	END IF;
 
     -- Se não encontrar nenhum papel específico
     RAISE EXCEPTION 'Papel não encontrado para o email %', username;
@@ -364,7 +359,7 @@ END;
 $$;
 
 
-____________ADICIONAR PESSOAS________
+____________ADICIONAR PESSOAS_________________________________________________
 
 -- ADICIONAR PACIENTE
 -- regista um paciente para um determinado numero de cc
@@ -424,7 +419,7 @@ $$;
 
 
 
--- ADICIONAR ASSISTENTE
+__ ADICIONAR ASSISTENTE _____________________________________________________
 -- regista uma pessoa para um determinado numero de cc
 -- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
 create or replace procedure add_assistente(in s_nome varchar(512),
@@ -497,7 +492,7 @@ end;
 $$;
 
 
--- ADICIONAR MEDICO
+-- ADICIONAR MEDICO -___________________________________________________________
 -- regista uma pessoa para um determinado numero de cc
 -- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
 create or replace procedure add_medico(in s_nome varchar(512),
@@ -571,7 +566,7 @@ end;
 $$;
 
 
--- ADICIONAR ENFERMEIRO
+-- ADICIONAR ENFERMEIRO __________________________________________________________
 -- regista uma pessoa para um determinado numero de cc
 -- retorna user_id (CC) em caso de sucesso, retorna 0 caso ja exista uma pessoa com o mesmo cc
 create or replace procedure add_enfermeiro(in s_nome varchar(512),
@@ -645,7 +640,7 @@ end;
 $$;
 
 
-____ ADICIONAR ESPECIALIDADES E SUBESPECIALIDADES____
+____ ADICIONAR ESPECIALIDADES E SUBESPECIALIDADES_________________________________________
 
 -- ADICIONAR ESPECIALIDADE
 -- regista uma especializacao para um determinado empregado (tem de ser medico ou enfermeiro)
@@ -752,7 +747,7 @@ end;
 $$;
 
 
-________ ADICIONAR RECEITA
+________ ADICIONAR RECEITA -_____________________________________________________________
 
 -- ADICIONAR RECEITA
 -- regista uma receita para uma determinada entrada
@@ -834,7 +829,7 @@ begin
 end;
 $$;
 
--- ADICIONAR DESCRICAODOSAGEM
+-- ADICIONAR DESCRICAODOSAGEM _____________________________________________________
 -- regista uma descricao para uma determinada receita
 -- retorna numero da prescricao em caso de sucesso, retorna 0 caso não seja médico ou o id nao existir
 create or replace procedure add_descricaodosagem(in s_id_receita integer,
