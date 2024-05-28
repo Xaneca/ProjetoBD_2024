@@ -659,8 +659,52 @@ def add_prescription():
       return flask.jsonify(response)
 
 
+#################################################
+############## GET PRESCRIPTIONS #############
+#################################################
 
-              
+
+@app.route('/dbproj/prescriptions/<int:id_pessoa>', methods=['GET'])
+def get_prescriptions(id_pessoa):
+    route_string = 'GET /dbproj/prescriptions/<id_pessoa>'
+    logger.info(route_string)
+    payload = flask.request.get_json()
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    logger.debug(f'{route_string} - payload: {payload}')
+    
+    try:
+        #cur.execute('SELECT nemp, nome, funcao, encar, data_entrada, sal, premios, ndep FROM emp where nemp = %s', (nemp,))
+        cur.execute('select numpresc, validade, array_agg(row(frequencia, periodo, quantidade, nome, ec.efeitocolateral)) from  entrada_conta as ee inner join precricao as pre on pre.entrada_conta_id = ee.id inner join descricaodosagem as dd on dd.prescricao_entrada_id = pre.entrada_conta_id inner join medicamento as med on dd.medicamento_id = med.id inner join ( select  efeitocolateral.medicamento_id, array_agg(row(descricao, probabilidade, severidade)::text) as efeitocolateral from  efeitocolateral  group by efeitocolateral.medicamento_id) ec on  medicamento.id = ec.medicamento_id group by numpresc,validade;', (id_pessoa,))
+        rows = cur.fetchall()
+        
+        conteudo = []
+        for row in rows:
+            receita_id, validade, posologias = row
+            
+            for posologia in posologias:
+                frequencia, periodo, quantidade, nome, lista_efeito_colaterais =  posologia
+                efeito_colateral_medicamento = []
+                receitas_info = []
+                for efeito_colateral in lista_efeito_colaterais:
+                    efeito_colateral_medicamento.append({'descricao': efeito_colateral[0], 'probabilidade': efeito_colateral[1], 'severidade': efeito_colateral[2]})
+                receitas_info.append({'dose': quantidade, 'frequencia': frequencia, 'periodo': periodo, 'nome': nome, 'efeito_colateral': efeito_colateral_medicamento})
+            conteudo.append({'Num_receita:': receita_id, 'Validade':validade, 'Posologias': receitas_info})
+        
+        response = {'status': StatusCodes['success'], 'results': conteudo}
+    except (Exception, psycopg2.DatabaseError) as error:
+        logger.error(f'{route_string} - error: {error}')
+        response = {'status': StatusCodes['internal_error'], 'errors': str(error)}
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+    return flask.jsonify(response)
+  
+            
 #################################################
 ############## SCHEDULE APPOINTMENT #############
 #################################################
