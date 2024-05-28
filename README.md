@@ -31,7 +31,7 @@
     - [ ] Adicionar enfermeiro
     - [ ] Confirmar q paciente disponivel
       
-- [ ] Ver prescriçoes
+- [X] Ver prescriçoes
 - [X] Adicionar prescriçao
     - [ ] apenas medico
 
