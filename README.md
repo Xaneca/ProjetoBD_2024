@@ -21,6 +21,7 @@
           (tipo, consulta ja marcada das 17 as 18, n posso marcar as 17:30)
     - [ ] quando houver token n ser preciso enviar o cc e o token é que o tem
     - [ ] adicionar conta
+    - [ ] Confirmar q paciente disponivel
 - [X] ver consultas
     - [ ] apenas assistentes
       
@@ -28,6 +29,7 @@
 - [X] agendar cirurgia
     - [ ] adicionar conta
     - [ ] Adicionar enfermeiro
+    - [ ] Confirmar q paciente disponivel
       
 - [ ] Ver prescriçoes
 - [X] Adicionar prescriçao
