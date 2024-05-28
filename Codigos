@@ -753,10 +753,10 @@ ________ ADICIONAR RECEITA -____________________________________________________
 -- regista uma receita para uma determinada entrada
 -- retorna numero da prescricao em caso de sucesso, retorna 0 caso não seja médico ou o id nao existir
 create or replace procedure adicionar_receita(in s_entrada_conta_id integer,
-					      in s_tipo varchar(512),
-					      in s_validade date,
-					      in cur_time timestamp,
-					      out resultado integer)
+											  in s_tipo varchar(512),
+											  in s_validade date,
+											  in cur_time timestamp,
+											  out resultado integer)
 language plpgsql
 as $$
 declare
@@ -768,7 +768,6 @@ declare
 				and pres.datahoraentrada < cur_time
 				and (pres.datahorasaida is null or pres.datahorasaida > cur_time);
 	rec RECORD;
-	ultimo_id_entrada entrada_conta.id%type;
 begin
 	-- inicializar variavel saida
 	resultado := 0;
@@ -792,27 +791,27 @@ begin
 			then
 				begin
 						
-					-- verificar se consulta/hospitalizaçao está a ocorrer
-					if exists(
-						select 1
-							from entrada_conta e
-								full join consulta as co on e.id = co.entrada_conta_id
-								full join hospitalizacao as ho on e.id = ho.entrada_conta_id
-								where pres.entrada_conta_id = s_entrada_conta_id
-									and pres.datahoraentrada < cur_time
-									and (pres.datahorasaida is null or pres.datahorasaida > cur_time)
-					)
-					then
-						begin
-							-- inserir em prescricao
-							insert into prescricao(validade, entrada_conta_id)
-							values(s_validade, s_entrada_conta_id)
-							returning numpresc into resultado;
-						end;
-					else
-						raise exception 'A consulta/hospitalizacao nao esta a ocorrer';
-					end if;
-				end;
+				-- verificar se consulta/hospitalizaçao está a ocorrer
+				if exists(
+					select 1
+						from entrada_conta e
+							full join consulta as co on e.id = co.entrada_conta_id
+							full join hospitalizacao as ho on e.id = ho.entrada_conta_id
+							where pres.entrada_conta_id = s_entrada_conta_id
+								and pres.datahoraentrada < cur_time
+								and (pres.datahorasaida is null or pres.datahorasaida > cur_time)
+				)
+				then
+					begin
+						-- inserir em prescricao
+						insert into prescricao(validade, entrada_conta_id)
+						values(s_validade, s_entrada_conta_id)
+						returning numpresc into resultado;
+					end;
+				else
+					raise exception 'A consulta/hospitalizacao nao esta a ocorrer';
+				end if;
+			end;
 			else
 				raise exception 'O id % nao corresponde a nenhuma consulta ou hospitalizacao', s_entrada_conta_id;
 			end if;
@@ -829,16 +828,16 @@ begin
 end;
 $$;
 
--- ADICIONAR DESCRICAODOSAGEM _____________________________________________________
+-- ADICIONAR DESCRICAODOSAGEM
 -- regista uma descricao para uma determinada receita
 -- retorna numero da prescricao em caso de sucesso, retorna 0 caso não seja médico ou o id nao existir
 create or replace procedure add_descricaodosagem(in s_id_receita integer,
-						 in s_entrada_conta_id integer,
-						 in s_medicamento_id integer,
-					 	 in s_frequencia varchar(512),
-						 in s_periodo varchar(512),
-						 in s_quantidade integer,
-						 out resultado integer)
+												 in s_entrada_conta_id integer,
+											  	 in s_medicamento_id integer,
+											  	 in s_frequencia varchar(512),
+											  	 in s_periodo varchar(512),
+												 in s_quantidade integer,
+											  	 out resultado integer)
 language plpgsql
 as $$
 begin
